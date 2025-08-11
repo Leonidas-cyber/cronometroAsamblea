@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronómetro de Asamblea</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            min-height: 100vh;
+            transition: background-color 1s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .controls-panel {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .controls-panel.hidden {
+            display: none;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .controls-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background-color: #059669;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background-color: #047857;
+        }
+
+        .btn-pause {
+            background-color: #d97706;
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            background-color: #b45309;
+        }
+
+        .btn-reset {
+            background-color: #2563eb;
+        }
+
+        .btn-reset:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-stop {
+            background-color: #dc2626;
+        }
+
+        .btn-stop:hover {
+            background-color: #b91c1c;
+        }
+
+        .display {
+            text-align: center;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .display.full-screen {
+            margin-top: 4rem;
+        }
+
+        .speaker-name {
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            transition: font-size 0.3s ease;
+        }
+
+        .speaker-name.normal {
+            font-size: 2rem;
+        }
+
+        .speaker-name.large {
+            font-size: 3rem;
+        }
+
+        .time-section {
+            margin-bottom: 3rem;
+        }
+
+        .time-label {
+            font-weight:500;
+            margin-bottom: 1.5rem;
+            transition: font-size 0.3s ease;
+        }
+
+        .time-label.normal {
+            font-size: 2rem;
+        }
+
+        .time-label.large {
+            font-size: 2.5rem;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            line-height: 1;
+            margin-bottom: 2rem;
+            transition: font-size 0.3s ease;
+        }
+
+        .time-display.normal {
+            font-size: 15rem;
+        }
+
+        .time-display.large {
+            font-size: 25rem;
+        }
+
+        .status-indicator {
+            font-weight: bold;
+            margin-bottom: 2rem;
+            transition: font-size 0.3s ease;
+        }
+
+        .status-indicator.normal {
+            font-size: 2.5rem;
+        }
+
+        .status-indicator.large {
+            font-size: 4rem;
+        }
+
+        .additional-info {
+            opacity: 0.9;
+            transition: font-size 0.3s ease;
+        }
+
+        .info-label {
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-label.normal {
+            font-size: 1.25rem;
+        }
+
+        .info-label.large {
+            font-size: 1.5rem;
+        }
+
+        .info-time {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-time.normal {
+            font-size: 2rem;
+        }
+
+        .info-time.large {
+            font-size: 2.5rem;
+        }
+
+        .info-details {
+            font-size: 1rem;
+        }
+
+        .info-details.large {
+            font-size: 1.25rem;
+        }
+
+        /* Background colors */
+        .bg-normal {
+            background-color: #059669;
+        }
+
+        .bg-warning {
+            background-color: #d97706;
+        }
+
+        .bg-overtime {
+            background-color: #dc2626;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .time-display.normal {
+                font-size: 6rem;
+            }
+
+            .time-display.large {
+                font-size: 8rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-normal">
+    <div class="container">
+        <!-- Botón para mostrar/ocultar controles -->
+        <button class="toggle-btn" onclick="toggleControls()">
+            🔼 Ocultar Controles
+        </button>
+
+        <!-- Panel de controles -->
+        <div class="controls-panel" id="controlsPanel">
+            <h1 class="title">Cronómetro de Asamblea</h1>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Nombre del Orador</label>
+                    <input type="text" class="form-input" id="speakerInput" 
+                           placeholder="Ingrese el nombre del orador">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Tiempo Límite (minutos)</label>
+                    <input type="number" class="form-input" id="timeLimitInput" 
+                           value="5" min="1" max="60">
+                </div>
+            </div>
+
+            <div class="controls-buttons">
+                <button class="btn btn-start" onclick="startTimer()">
+                    ▶️ Iniciar
+                </button>
+                
+                <button class="btn btn-pause" onclick="pauseTimer()" disabled>
+                    ⏸️ Pausar
+                </button>
+                
+                <button class="btn btn-reset" onclick="resetTimer()">
+                    🔄 Reiniciar
+                </button>
+                
+                <button class="btn btn-stop" onclick="stopTimer()">
+                    ⏹️ Detener
+                </button>
+            </div>
+        </div>
+
+        <!-- Display principal -->
+        <div class="display" id="mainDisplay">
+            <div class="speaker-name normal" id="speakerDisplay"></div>
+            
+            <!-- TIEMPO TRANSCURRIDO - PRINCIPAL -->
+            <div class="time-section">
+                <div class="time-label normal">TIEMPO TRANSCURRIDO</div>
+                <div class="time-display normal" id="currentTimeDisplay">00:00</div>
+            </div>
+
+            <!-- Indicadores de Estado -->
+            <div class="status-indicator normal" id="statusIndicator">
+                🟢 TIEMPO NORMAL
+            </div>
+
+            <!-- Información adicional -->
+            <div class="additional-info">
+                <div class="info-label normal" id="remainingLabel">Tiempo Restante</div>
+                <div class="info-time normal" id="remainingTimeDisplay">05:00</div>
+                
+                <div class="info-details" id="infoDetails">
+                    <p id="timeLimitInfo">Límite de tiempo: 5 minutos</p>
+                    <p id="statusInfo"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let timeLimit = 5; // minutos
+        let currentTime = 0; // segundos
+        let isRunning = false;
+        let speaker = '';
+        let showControls = true;
+        let timerInterval = null;
+
+        // Elementos del DOM
+        const body = document.body;
+        const controlsPanel = document.getElementById('controlsPanel');
+        const mainDisplay = document.getElementById('mainDisplay');
+        const speakerInput = document.getElementById('speakerInput');
+        const timeLimitInput = document.getElementById('timeLimitInput');
+        const speakerDisplay = document.getElementById('speakerDisplay');
+        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const remainingLabel = document.getElementById('remainingLabel');
+        const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+        const timeLimitInfo = document.getElementById('timeLimitInfo');
+        const statusInfo = document.getElementById('statusInfo');
+
+        // Botones
+        const startBtn = document.querySelector('.btn-start');
+        const pauseBtn = document.querySelector('.btn-pause');
+        const resetBtn = document.querySelector('.btn-reset');
+        const stopBtn = document.querySelector('.btn-stop');
+        const toggleBtn = document.querySelector('.toggle-btn');
+
+        // Funciones de formato de tiempo
+        function formatTime(seconds) {
+            const absSeconds = Math.abs(seconds);
+            const mins = Math.floor(absSeconds / 60);
+            const secs = absSeconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Función para actualizar la pantalla
+        function updateDisplay() {
+            const timeLimitInSeconds = timeLimit * 60;
+            const remainingTime = timeLimitInSeconds - currentTime;
+            const isOverTime = remainingTime < 0;
+            const isWarningTime = remainingTime <= 60 && remainingTime > 0;
+
+            // Actualizar tiempo actual
+            currentTimeDisplay.textContent = formatTime(currentTime);
+
+            // Actualizar tiempo restante
+            remainingTimeDisplay.textContent = (isOverTime ? '+' : '') + formatTime(remainingTime);
+
+            // Actualizar etiqueta
+            remainingLabel.textContent = isOverTime ? 'Tiempo Excedido' : 'Tiempo Restante';
+
+            // Actualizar indicador de estado
+            if (isOverTime) {
+                statusIndicator.textContent = '🔴 TIEMPO EXCEDIDO';
+                body.className = 'bg-overtime';
+            } else if (isWarningTime) {
+                statusIndicator.textContent = '🟡 ÚLTIMO MINUTO';
+                body.className = 'bg-warning';
+            } else {
+                statusIndicator.textContent = '🟢 TIEMPO NORMAL';
+                body.className = 'bg-normal';
+            }
+
+            // Actualizar información adicional
+            timeLimitInfo.textContent = `Límite de tiempo: ${timeLimit} minutos`;
+            
+            if (isRunning) {
+                statusInfo.textContent = '⏱️ Cronómetro en marcha';
+            } else if (currentTime > 0) {
+                statusInfo.textContent = '⏸️ Cronómetro pausado';
+            } else {
+                statusInfo.textContent = '';
+            }
+
+            // Actualizar nombre del orador
+            speakerDisplay.textContent = speaker;
+            speakerDisplay.style.display = speaker ? 'block' : 'none';
+        }
+
+        // Funciones de control
+        function startTimer() {
+            // Actualizar configuración
+            timeLimit = parseInt(timeLimitInput.value) || 5;
+            speaker = speakerInput.value;
+
+            isRunning = true;
+            timerInterval = setInterval(() => {
+                currentTime++;
+                updateDisplay();
+            }, 1000);
+
+            // Deshabilitar inputs
+            speakerInput.disabled = true;
+            timeLimitInput.disabled = true;
+            
+            // Actualizar botones
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+
+            updateDisplay();
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            
+            // Actualizar botones
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+
+            updateDisplay();
+        }
+
+        function resetTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            currentTime = 0;
+            
+            // Actualizar botones
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+
+            updateDisplay();
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            currentTime = 0;
+            speaker = '';
+            speakerInput.value = '';
+            
+            // Habilitar inputs
+            speakerInput.disabled = false;
+            timeLimitInput.disabled = false;
+            
+            // Actualizar botones
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+
+            updateDisplay();
+        }
+
+        function toggleControls() {
+            showControls = !showControls;
+            
+            if (showControls) {
+                controlsPanel.classList.remove('hidden');
+                mainDisplay.classList.remove('full-screen');
+                toggleBtn.textContent = '🔼 Ocultar Controles';
+                
+                // Tamaños normales
+                document.querySelector('.speaker-name').className = 'speaker-name normal';
+                document.querySelector('.time-label').className = 'time-label normal';
+                document.querySelector('.time-display').className = 'time-display normal';
+                document.querySelector('.status-indicator').className = 'status-indicator normal';
+                document.querySelector('.info-label').className = 'info-label normal';
+                document.querySelector('.info-time').className = 'info-time normal';
+                document.querySelector('.info-details').className = 'info-details';
+            } else {
+                controlsPanel.classList.add('hidden');
+                mainDisplay.classList.add('full-screen');
+                toggleBtn.textContent = '🔽 Mostrar Controles';
+                
+                // Tamaños grandes
+                document.querySelector('.speaker-name').className = 'speaker-name large';
+                document.querySelector('.time-label').className = 'time-label large';
+                document.querySelector('.time-display').className = 'time-display large';
+                document.querySelector('.status-indicator').className = 'status-indicator large';
+                document.querySelector('.info-label').className = 'info-label large';
+                document.querySelector('.info-time').className = 'info-time large';
+                document.querySelector('.info-details').className = 'info-details large';
+            }
+        }
+
+        // Inicializar
+        updateDisplay();
+    </script>
+</body>
+</html>
