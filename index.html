@@ -1,1019 +1,547 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cronómetro de Asamblea</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            min-height: 100vh;
-            transition: background-color 1s ease;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-
-        .toggle-btn {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .controls-panel {
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .controls-panel.hidden {
-            display: none;
-        }
-
-        .title {
-            text-align: center;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 2rem;
-        }
-
-        /* Nuevos estilos para tabs */
-        .tabs {
-            display: flex;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 1rem;
-            background: none;
-            border: none;
-            font-size: 1rem;
-            font-weight: 500;
-            color: #6b7280;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab.active {
-            color: #3b82f6;
-            border-bottom-color: #3b82f6;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-label {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            font-size: 1rem;
-            transition: all 0.2s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .controls-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s ease;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-start {
-            background-color: #059669;
-        }
-
-        .btn-start:hover:not(:disabled) {
-            background-color: #047857;
-        }
-
-        .btn-pause {
-            background-color: #d97706;
-        }
-
-        .btn-pause:hover:not(:disabled) {
-            background-color: #b45309;
-        }
-
-        .btn-reset {
-            background-color: #2563eb;
-        }
-
-        .btn-reset:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-stop {
-            background-color: #dc2626;
-        }
-
-        .btn-stop:hover {
-            background-color: #b91c1c;
-        }
-
-        /* Nuevos estilos para cronómetro de reunión */
-        .btn-save {
-            background-color: #7c3aed;
-        }
-
-        .btn-save:hover {
-            background-color: #6d28d9;
-        }
-
-        .btn-export {
-            background-color: #059669;
-        }
-
-        .btn-export:hover {
-            background-color: #047857;
-        }
-
-        .meeting-info {
-            background: #f9fafb;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .meeting-timer {
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 1rem;
-        }
-
-        .records-section {
-            margin-top: 2rem;
-        }
-
-        .records-header {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #374151;
-            margin-bottom: 1rem;
-        }
-
-        .records-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-        }
-
-        .record-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .record-item:last-child {
-            border-bottom: none;
-        }
-
-        .record-info {
-            flex: 1;
-        }
-
-        .record-name {
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .record-time {
-            font-family: 'Courier New', monospace;
-            color: #6b7280;
-        }
-
-        .record-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-small {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        .btn-delete {
-            background-color: #dc2626;
-        }
-
-        .btn-delete:hover {
-            background-color: #b91c1c;
-        }
-
-        .display {
-            text-align: center;
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .display.full-screen {
-            margin-top: 4rem;
-        }
-
-        .speaker-name {
-            font-weight: bold;
-            margin-bottom: 1.5rem;
-            transition: font-size 0.3s ease;
-        }
-
-        .speaker-name.normal {
-            font-size: 2rem;
-        }
-
-        .speaker-name.large {
-            font-size: 3rem;
-        }
-
-        .time-section {
-            margin-bottom: 3rem;
-        }
-
-        .time-label {
-            font-weight:500;
-            margin-bottom: 1.5rem;
-            transition: font-size 0.3s ease;
-        }
-
-        .time-label.normal {
-            font-size: 2rem;
-        }
-
-        .time-label.large {
-            font-size: 2.5rem;
-        }
-
-        .time-display {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            line-height: 1;
-            margin-bottom: 2rem;
-            transition: font-size 0.3s ease;
-        }
-
-        .time-display.normal {
-            font-size: 15rem;
-        }
-
-        .time-display.large {
-            font-size: 25rem;
-        }
-
-        .status-indicator {
-            font-weight: bold;
-            margin-bottom: 2rem;
-            transition: font-size 0.3s ease;
-        }
-
-        .status-indicator.normal {
-            font-size: 2.5rem;
-        }
-
-        .status-indicator.large {
-            font-size: 4rem;
-        }
-
-        .additional-info {
-            opacity: 0.9;
-            transition: font-size 0.3s ease;
-        }
-
-        .info-label {
-            font-weight: 500;
-            margin-bottom: 0.75rem;
-        }
-
-        .info-label.normal {
-            font-size: 1.25rem;
-        }
-
-        .info-label.large {
-            font-size: 1.5rem;
-        }
-
-        .info-time {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            margin-bottom: 1.5rem;
-        }
-
-        .info-time.normal {
-            font-size: 2rem;
-        }
-
-        .info-time.large {
-            font-size: 2.5rem;
-        }
-
-        .info-details {
-            font-size: 1rem;
-        }
-
-        .info-details.large {
-            font-size: 1.25rem;
-        }
-
-        /* Background colors */
-        .bg-normal {
-            background-color: #059669;
-        }
-
-        .bg-warning {
-            background-color: #d97706;
-        }
-
-        .bg-overtime {
-            background-color: #dc2626;
-        }
-
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .controls-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn {
-                width: 100%;
-                max-width: 200px;
-            }
-
-            .time-display.normal {
-                font-size: 6rem;
-            }
-
-            .time-display.large {
-                font-size: 8rem;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cronómetro de Asamblea</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* --- estilos (idénticos a la versión anterior) --- */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;min-height:100vh;transition:background-color 1s ease}
+.container{max-width:1200px;margin:0 auto;padding:1rem}
+.toggle-btn{position:fixed;top:1rem;right:1rem;z-index:10;background:rgba(255,255,255,.2);color:#fff;border:none;padding:.5rem 1rem;border-radius:.5rem;cursor:pointer;backdrop-filter:blur(4px);transition:.3s;font-size:.9rem}
+.toggle-btn:hover{background:rgba(255,255,255,.3)}
+.controls-panel{background:#fff;border-radius:.5rem;box-shadow:0 10px 25px rgba(0,0,0,.1);padding:2rem;margin-bottom:2rem;transition:.3s}
+.controls-panel.hidden{display:none}
+.title{text-align:center;font-size:2rem;font-weight:700;color:#374151;margin-bottom:2rem}
+.tabs{display:flex;margin-bottom:2rem;border-bottom:1px solid #e5e7eb}
+.tab{flex:1;padding:1rem;background:none;border:none;font-size:1rem;font-weight:500;color:#6b7280;cursor:pointer;transition:.2s;border-bottom:2px solid transparent}
+.tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.form-group{display:flex;flex-direction:column}
+.form-label{font-size:.875rem;font-weight:500;color:#374151;margin-bottom:.5rem}
+.form-input{width:100%;padding:.75rem;border:1px solid #d1d5db;border-radius:.375rem;font-size:1rem;transition:.2s}
+.form-input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.form-input:disabled{opacity:.5;cursor:not-allowed}
+.controls-buttons{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap}
+.btn{display:flex;align-items:center;gap:.5rem;padding:.75rem 1.5rem;color:#fff;border:none;border-radius:.5rem;cursor:pointer;font-size:1rem;transition:.2s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-start{background-color:#059669}.btn-start:hover:not(:disabled){background-color:#047857}
+.btn-pause{background-color:#d97706}.btn-pause:hover:not(:disabled){background-color:#b45309}
+.btn-reset{background-color:#2563eb}.btn-reset:hover{background-color:#1d4ed8}
+.btn-stop{background-color:#dc2626}.btn-stop:hover{background-color:#b91c1c}
+.btn-save{background-color:#7c3aed}.btn-save:hover{background-color:#6d28d9}
+.btn-export{background-color:#059669}.btn-export:hover{background-color:#047857}
+.meeting-info{background:#f9fafb;border-radius:.5rem;padding:1rem;margin-bottom:2rem}
+.meeting-timer{text-align:center;font-family:'Courier New',monospace;font-size:1.5rem;font-weight:700;color:#374151;margin-bottom:1rem}
+.records-section{margin-top:2rem}
+.records-header{font-size:1.25rem;font-weight:700;color:#374151;margin-bottom:1rem}
+.records-list{max-height:300px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:.5rem}
+.record-item{display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid #e5e7eb}
+.record-item:last-child{border-bottom:none}
+.record-info{flex:1}
+.record-name{font-weight:500;color:#374151}
+.record-time{font-family:'Courier New',monospace;color:#6b7280}
+.record-actions{display:flex;gap:.5rem}
+.btn-small{padding:.25rem .5rem;font-size:.8rem}
+.btn-delete{background-color:#dc2626}.btn-delete:hover{background-color:#b91c1c}
+.display{text-align:center;color:#fff;transition:.3s}
+.display.full-screen{margin-top:4rem}
+.speaker-name{font-weight:700;margin-bottom:1.5rem;transition:font-size .3s}
+.speaker-name.normal{font-size:2rem}.speaker-name.large{font-size:3rem}
+.time-section{margin-bottom:3rem}
+.time-label{font-weight:500;margin-bottom:1.5rem;transition:font-size .3s}
+.time-label.normal{font-size:2rem}.time-label.large{font-size:2.5rem}
+.time-display{font-family:'Courier New',monospace;font-weight:700;line-height:1;margin-bottom:2rem;transition:font-size .3s}
+.time-display.normal{font-size:15rem}.time-display.large{font-size:25rem}
+.status-indicator{font-weight:700;margin-bottom:2rem;transition:font-size .3s}
+.status-indicator.normal{font-size:2.5rem}.status-indicator.large{font-size:4rem}
+.additional-info{opacity:.9;transition:font-size .3s}
+.info-label{font-weight:500;margin-bottom:.75rem}
+.info-label.normal{font-size:1.25rem}.info-label.large{font-size:1.5rem}
+.info-time{font-family:'Courier New',monospace;font-weight:700;margin-bottom:1.5rem}
+.info-time.normal{font-size:2rem}.info-time.large{font-size:2.5rem}
+.info-details{font-size:1rem}.info-details.large{font-size:1.25rem}
+.bg-normal{background-color:#059669}.bg-warning{background-color:#d97706}.bg-overtime{background-color:#dc2626}
+@media (max-width:768px){
+ .form-grid{grid-template-columns:1fr}
+ .controls-buttons{flex-direction:column;align-items:center}
+ .btn{width:100%;max-width:200px}
+ .time-display.normal{font-size:6rem}
+ .time-display.large{font-size:8rem}
+}
+</style>
 </head>
 <body class="bg-normal">
-    <div class="container">
-        <!-- Botón para mostrar/ocultar controles -->
-        <button class="toggle-btn" onclick="toggleControls()">
-            🔼 Ocultar Controles
-        </button>
+<div class="container">
+  <button class="toggle-btn" onclick="toggleControls()">🔼 Ocultar Controles</button>
 
-        <!-- Panel de controles -->
-        <div class="controls-panel" id="controlsPanel">
-            <h1 class="title">Cronómetro de Asamblea</h1>
-            
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('speaker')">Cronómetro de Orador</button>
-                <button class="tab" onclick="switchTab('meeting')">Cronómetro de Reunión</button>
-            </div>
+  <div class="controls-panel" id="controlsPanel">
+    <h1 class="title">Cronómetro de Asamblea</h1>
 
-            <!-- Tab: Cronómetro de Orador (Original) -->
-            <div class="tab-content active" id="speakerTab">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Nombre del Orador</label>
-                        <input type="text" class="form-input" id="speakerInput" 
-                               placeholder="Ingrese el nombre del orador">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Tiempo Límite (minutos)</label>
-                        <input type="number" class="form-input" id="timeLimitInput" 
-                               value="5" min="1" max="60">
-                    </div>
-                </div>
-
-                <div class="controls-buttons">
-                    <button class="btn btn-start" onclick="startTimer()">
-                        ▶️ Iniciar
-                    </button>
-                    
-                    <button class="btn btn-pause" onclick="pauseTimer()" disabled>
-                        ⏸️ Pausar
-                    </button>
-                    
-                    <button class="btn btn-reset" onclick="resetTimer()">
-                        🔄 Reiniciar
-                    </button>
-                    
-                    <button class="btn btn-stop" onclick="stopTimer()">
-                        ⏹️ Detener
-                    </button>
-                </div>
-            </div>
-
-            <!-- Tab: Cronómetro de Reunión (Nuevo) -->
-            <div class="tab-content" id="meetingTab">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Título de la Reunión</label>
-                        <input type="text" class="form-input" id="meetingTitleInput" 
-                               placeholder="Ingrese el título de la reunión">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" class="form-input" id="meetingDateInput">
-                    </div>
-                </div>
-
-                <div class="meeting-info">
-                    <div class="form-label">Tiempo Total de Reunión:</div>
-                    <div class="meeting-timer" id="meetingTimer">00:00:00</div>
-                </div>
-
-                <div class="controls-buttons">
-                    <button class="btn btn-start" onclick="startMeetingTimer()" id="meetingStartBtn">
-                        ▶️ Iniciar Reunión
-                    </button>
-                    
-                    <button class="btn btn-pause" onclick="pauseMeetingForParticipant()" disabled id="meetingPauseBtn">
-                        ⏸️ Pausar y Asignar Orador
-                    </button>
-                    
-                    <button class="btn btn-stop" onclick="stopMeetingTimer()" id="meetingStopBtn">
-                        ⏹️ Terminar Reunión
-                    </button>
-                    
-                    <button class="btn btn-export" onclick="exportToPDF()" id="exportBtn">
-                        📄 Exportar PDF
-                    </button>
-                </div>
-
-                <!-- Participación actual -->
-                <div class="meeting-info" id="currentParticipationInfo" style="display: none;">
-                    <div class="form-label">Participación Actual:</div>
-                    <div style="font-weight: bold; color: #374151; margin-bottom: 0.5rem;" id="currentParticipantDisplay"></div>
-                    <div class="meeting-timer" id="currentParticipantTimer">00:00</div>
-                </div>
-
-                <!-- Sección de registros -->
-                <div class="records-section">
-                    <div class="records-header">Registro de Participaciones (<span id="recordCount">0</span>)</div>
-                    <div class="records-list" id="recordsList">
-                        <div style="padding: 2rem; text-align: center; color: #6b7280;">
-                            No hay registros aún
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Display principal -->
-        <div class="display" id="mainDisplay">
-            <div class="speaker-name normal" id="speakerDisplay"></div>
-            
-            <!-- TIEMPO TRANSCURRIDO - PRINCIPAL -->
-            <div class="time-section">
-                <div class="time-label normal">TIEMPO TRANSCURRIDO</div>
-                <div class="time-display normal" id="currentTimeDisplay">00:00</div>
-            </div>
-
-            <!-- Indicadores de Estado -->
-            <div class="status-indicator normal" id="statusIndicator">
-                🟢 TIEMPO NORMAL
-            </div>
-
-            <!-- Información adicional -->
-            <div class="additional-info">
-                <div class="info-label normal" id="remainingLabel">Tiempo Restante</div>
-                <div class="info-time normal" id="remainingTimeDisplay">05:00</div>
-                
-                <div class="info-details" id="infoDetails">
-                    <p id="timeLimitInfo">Límite de tiempo: 5 minutos</p>
-                    <p id="statusInfo"></p>
-                </div>
-            </div>
-        </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('speaker')">Cronómetro de Orador</button>
+      <button class="tab" onclick="switchTab('meeting')">Cronómetro de Reunión</button>
     </div>
 
-    <script>
-        // Variables globales ORIGINALES (sin modificar)
-        let timeLimit = 5; // minutos
-        let currentTime = 0; // segundos
-        let isRunning = false;
-        let speaker = '';
-        let showControls = true;
-        let timerInterval = null;
+    <!-- Orador -->
+    <div class="tab-content active" id="speakerTab">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombre del Orador</label>
+          <input type="text" class="form-input" id="speakerInput" placeholder="Ingrese el nombre del orador">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tiempo Límite (minutos)</label>
+          <input type="number" class="form-input" id="timeLimitInput" value="5" min="1" max="60">
+        </div>
+      </div>
+      <div class="controls-buttons">
+        <button class="btn btn-start" onclick="startTimer()">▶️ Iniciar</button>
+        <button class="btn btn-pause" onclick="pauseTimer()" disabled>⏸️ Pausar</button>
+        <button class="btn btn-reset" onclick="resetTimer()">🔄 Reiniciar</button>
+        <button class="btn btn-stop" onclick="stopTimer()">⏹️ Detener</button>
+      </div>
+    </div>
 
-        // NUEVAS variables para cronómetro de reunión
-        let meetingTime = 0; // segundos
-        let isMeetingRunning = false;
-        let meetingTimerInterval = null;
-        let meetingTitle = '';
-        let meetingDate = '';
-        let participationRecords = [];
-        let activeTab = 'speaker';
-        
-        // Variables para participación actual
-        let currentParticipantTime = 0; // tiempo del participante actual
-        let currentParticipantName = '';
-        let participantStartTime = 0; // tiempo de inicio de la participación
+    <!-- Reunión -->
+    <div class="tab-content" id="meetingTab">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Título de la Reunión</label>
+          <input type="text" class="form-input" id="meetingTitleInput" placeholder="Ingrese el título de la reunión">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input type="date" class="form-input" id="meetingDateInput">
+        </div>
+        <!-- NEW: Límite por orador en la pestaña Reunión -->
+        <div class="form-group">
+          <label class="form-label">Tiempo por orador (min)</label>
+          <input type="number" class="form-input" id="meetingParticipantLimitInput" value="5" min="1" max="120">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Atajos</label>
+          <div class="form-input" style="display:flex;align-items:center;gap:.75rem;opacity:.9;">
+            ␣ Espacio = Iniciar/Pausar reunión &nbsp; • &nbsp; ↵ Enter = Asignar/Terminar participación
+          </div>
+        </div>
+      </div>
 
-        // Elementos del DOM ORIGINALES
-        const body = document.body;
-        const controlsPanel = document.getElementById('controlsPanel');
-        const mainDisplay = document.getElementById('mainDisplay');
-        const speakerInput = document.getElementById('speakerInput');
-        const timeLimitInput = document.getElementById('timeLimitInput');
-        const speakerDisplay = document.getElementById('speakerDisplay');
-        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const remainingLabel = document.getElementById('remainingLabel');
-        const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
-        const timeLimitInfo = document.getElementById('timeLimitInfo');
-        const statusInfo = document.getElementById('statusInfo');
+      <div class="meeting-info">
+        <div class="form-label">Tiempo Total de Reunión:</div>
+        <div class="meeting-timer" id="meetingTimer">00:00:00</div>
+      </div>
 
-        // Botones ORIGINALES
-        const startBtn = document.querySelector('.btn-start');
-        const pauseBtn = document.querySelector('.btn-pause');
-        const resetBtn = document.querySelector('.btn-reset');
-        const stopBtn = document.querySelector('.btn-stop');
-        const toggleBtn = document.querySelector('.toggle-btn');
+      <div class="controls-buttons">
+        <button class="btn btn-start" onclick="startMeetingTimer()" id="meetingStartBtn">▶️ Iniciar Reunión</button>
+        <button class="btn btn-pause" onclick="pauseMeetingForParticipant()" disabled id="meetingPauseBtn">⏸️ Pausar y Asignar Orador</button>
+        <button class="btn btn-stop" onclick="stopMeetingTimer()" id="meetingStopBtn">⏹️ Terminar Reunión</button>
+        <button class="btn btn-export" onclick="exportToPDF()" id="exportBtn">📄 Exportar PDF</button>
+      </div>
 
-        // NUEVOS elementos del DOM para reunión
-        const meetingTitleInput = document.getElementById('meetingTitleInput');
-        const meetingDateInput = document.getElementById('meetingDateInput');
-        const meetingTimer = document.getElementById('meetingTimer');
-        const recordsList = document.getElementById('recordsList');
-        const recordCount = document.getElementById('recordCount');
+      <!-- Participación actual -->
+      <div class="meeting-info" id="currentParticipationInfo" style="display:none;">
+        <div class="form-label">Participación Actual:</div>
+        <div style="font-weight:bold;color:#374151;margin-bottom:.5rem;" id="currentParticipantDisplay"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:.8rem;color:#6b7280;">Tiempo usado:</div>
+            <div class="meeting-timer" id="currentParticipantTimer" style="margin-bottom:0;">00:00</div></div>
+          <div><div style="font-size:.8rem;color:#6b7280;">Tiempo límite:</div>
+            <div class="meeting-timer" id="currentParticipantLimit" style="margin-bottom:0;">05:00</div></div>
+          <div><div style="font-size:.8rem;color:#6b7280;">Restante:</div>
+            <div class="meeting-timer" id="currentParticipantRemaining" style="margin-bottom:0;">05:00</div></div>
+        </div>
+        <div class="controls-buttons" style="margin-top:1rem;">
+          <button class="btn btn-stop btn-small" onclick="finishCurrentParticipation()" style="font-size:.9rem;">⏹️ Terminar y Guardar Participación</button>
+        </div>
+      </div>
 
-        // Inicializar fecha actual
-        if (meetingDateInput) {
-            meetingDateInput.valueAsDate = new Date();
-        }
+      <!-- Registros -->
+      <div class="records-section">
+        <div class="records-header">Registro de Participaciones (<span id="recordCount">0</span>)</div>
+        <div class="records-list" id="recordsList">
+          <div style="padding:2rem;text-align:center;color:#6b7280;">No hay registros aún</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // NUEVA función para cambiar tabs
-        function switchTab(tab) {
-            activeTab = tab;
-            
-            // Actualizar tabs
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-            
-            if (tab === 'speaker') {
-                document.querySelector('.tab:first-child').classList.add('active');
-                document.getElementById('speakerTab').classList.add('active');
-                // Restaurar display original
-                updateDisplay();
-            } else {
-                document.querySelector('.tab:last-child').classList.add('active');
-                document.getElementById('meetingTab').classList.add('active');
-                // Mostrar display de reunión
-                updateMeetingDisplay();
-            }
-        }
+  <!-- Display principal -->
+  <div class="display" id="mainDisplay">
+    <div class="speaker-name normal" id="speakerDisplay"></div>
+    <div class="time-section">
+      <div class="time-label normal">TIEMPO TRANSCURRIDO</div>
+      <div class="time-display normal" id="currentTimeDisplay">00:00</div>
+    </div>
+    <div class="status-indicator normal" id="statusIndicator">🟢 TIEMPO NORMAL</div>
+    <div class="additional-info">
+      <div class="info-label normal" id="remainingLabel">Tiempo Restante</div>
+      <div class="info-time normal" id="remainingTimeDisplay">05:00</div>
+      <div class="info-details" id="infoDetails">
+        <p id="timeLimitInfo">Límite de tiempo: 5 minutos</p>
+        <p id="statusInfo"></p>
+      </div>
+    </div>
+  </div>
+</div>
 
-        // Funciones de formato de tiempo ORIGINALES
-        function formatTime(seconds) {
-            const absSeconds = Math.abs(seconds);
-            const mins = Math.floor(absSeconds / 60);
-            const secs = absSeconds % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
+<script>
+// ---------- Estado ----------
+let timeLimit = 5, currentTime = 0, isRunning = false, speaker = '', showControls = true, timerInterval = null;
+let meetingTime = 0, isMeetingRunning = false, meetingTimerInterval = null, meetingTitle = '', meetingDate = '', participationRecords = [], activeTab = 'speaker';
+let currentParticipantTime = 0, currentParticipantName = '', currentParticipantTimeLimit = 0, participantStartTime = 0;
 
-        // NUEVA función para formato con horas
-        function formatTimeWithHours(seconds) {
-            const absSeconds = Math.abs(seconds);
-            const hours = Math.floor(absSeconds / 3600);
-            const mins = Math.floor((absSeconds % 3600) / 60);
-            const secs = absSeconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
+// ---------- DOM ----------
+const body = document.body;
+const controlsPanel = document.getElementById('controlsPanel');
+const mainDisplay = document.getElementById('mainDisplay');
+const speakerInput = document.getElementById('speakerInput');
+const timeLimitInput = document.getElementById('timeLimitInput');
+const speakerDisplay = document.getElementById('speakerDisplay');
+const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+const statusIndicator = document.getElementById('statusIndicator');
+const remainingLabel = document.getElementById('remainingLabel');
+const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
+const timeLimitInfo = document.getElementById('timeLimitInfo');
+const statusInfo = document.getElementById('statusInfo');
+const toggleBtn = document.querySelector('.toggle-btn');
 
-        // Función para actualizar la pantalla ORIGINAL (sin modificar)
-        function updateDisplay() {
-            if (activeTab !== 'speaker') return;
-            
-            const timeLimitInSeconds = timeLimit * 60;
-            const remainingTime = timeLimitInSeconds - currentTime;
-            const isOverTime = remainingTime < 0;
-            const isWarningTime = remainingTime <= 60 && remainingTime > 0;
+const meetingTitleInput = document.getElementById('meetingTitleInput');
+const meetingDateInput = document.getElementById('meetingDateInput');
+const meetingTimerEl = document.getElementById('meetingTimer');
+const recordsList = document.getElementById('recordsList');
+const recordCount = document.getElementById('recordCount');
+// NEW: input de límite por orador en Reunión
+const meetingParticipantLimitInput = document.getElementById('meetingParticipantLimitInput');
 
-            // Actualizar tiempo actual
-            currentTimeDisplay.textContent = formatTime(currentTime);
+// Pre-cargar fecha de hoy
+if (meetingDateInput) meetingDateInput.valueAsDate = new Date();
 
-            // Actualizar tiempo restante
-            remainingTimeDisplay.textContent = (isOverTime ? '+' : '') + formatTime(remainingTime);
+// ---------- Utilidades ----------
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
+  if(tab==='speaker'){
+    document.querySelector('.tab:first-child').classList.add('active');
+    document.getElementById('speakerTab').classList.add('active');
+    updateDisplay();
+  }else{
+    document.querySelector('.tab:last-child').classList.add('active');
+    document.getElementById('meetingTab').classList.add('active');
+    updateMeetingDisplay();
+  }
+}
 
-            // Actualizar etiqueta
-            remainingLabel.textContent = isOverTime ? 'Tiempo Excedido' : 'Tiempo Restante';
+function formatTime(sec){
+  const a=Math.abs(sec), m=Math.floor(a/60), s=a%60;
+  return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+function formatTimeWithHours(sec){
+  const a=Math.abs(sec), h=Math.floor(a/3600), m=Math.floor((a%3600)/60), s=a%60;
+  return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
 
-            // Actualizar indicador de estado
-            if (isOverTime) {
-                statusIndicator.textContent = '🔴 TIEMPO EXCEDIDO';
-                body.className = 'bg-overtime';
-            } else if (isWarningTime) {
-                statusIndicator.textContent = '🟡 ÚLTIMO MINUTO';
-                body.className = 'bg-warning';
-            } else {
-                statusIndicator.textContent = '🟢 TIEMPO NORMAL';
-                body.className = 'bg-normal';
-            }
+// ---------- Orador ----------
+function updateDisplay(){
+  if(activeTab!=='speaker') return;
+  const limitSec=timeLimit*60, remaining=limitSec-currentTime, over=remaining<0, warn=remaining<=60&&remaining>0;
 
-            // Actualizar información adicional
-            timeLimitInfo.textContent = `Límite de tiempo: ${timeLimit} minutos`;
-            
-            if (isRunning) {
-                statusInfo.textContent = '⏱️ Cronómetro en marcha';
-            } else if (currentTime > 0) {
-                statusInfo.textContent = '⏸️ Cronómetro pausado';
-            } else {
-                statusInfo.textContent = '';
-            }
+  currentTimeDisplay.textContent=formatTime(currentTime);
+  remainingTimeDisplay.textContent=(over?'+':'')+formatTime(remaining);
+  remainingLabel.textContent=over?'Tiempo Excedido':'Tiempo Restante';
 
-            // Actualizar nombre del orador
-            speakerDisplay.textContent = speaker;
-            speakerDisplay.style.display = speaker ? 'block' : 'none';
+  if(over){statusIndicator.textContent='🔴 TIEMPO EXCEDIDO'; body.className='bg-overtime';}
+  else if(warn){statusIndicator.textContent='🟡 ÚLTIMO MINUTO'; body.className='bg-warning';}
+  else{statusIndicator.textContent='🟢 TIEMPO NORMAL'; body.className='bg-normal';}
 
-            // Mostrar elementos originales
-            remainingLabel.style.display = 'block';
-            remainingTimeDisplay.style.display = 'block';
-        }
+  timeLimitInfo.textContent=`Límite de tiempo: ${timeLimit} minutos`;
+  statusInfo.textContent = isRunning ? '⏱️ Cronómetro en marcha' : (currentTime>0 ? '⏸️ Cronómetro pausado' : '');
 
-        // NUEVA función para actualizar display de reunión
-        function updateMeetingDisplay() {
-            if (activeTab !== 'meeting') return;
-            
-            // Actualizar tiempo de reunión en el panel
-            meetingTimer.textContent = formatTimeWithHours(meetingTime);
+  speakerDisplay.textContent=speaker;
+  speakerDisplay.style.display=speaker?'block':'none';
+  remainingLabel.style.display='block';
+  remainingTimeDisplay.style.display='block';
+}
 
-            // Actualizar display principal para reunión
-            currentTimeDisplay.textContent = formatTimeWithHours(meetingTime);
-            speakerDisplay.textContent = meetingTitle || 'Cronómetro de Reunión';
-            speakerDisplay.style.display = 'block';
+function startTimer(){
+  timeLimit=parseInt(timeLimitInput.value)||5;
+  speaker=speakerInput.value;
+  isRunning=true;
+  timerInterval=setInterval(()=>{currentTime++;updateDisplay();},1000);
+  speakerInput.disabled=true; timeLimitInput.disabled=true;
+  document.querySelector('#speakerTab .btn-start').disabled=true;
+  document.querySelector('#speakerTab .btn-pause').disabled=false;
+  updateDisplay();
+}
+function pauseTimer(){
+  isRunning=false; clearInterval(timerInterval);
+  document.querySelector('#speakerTab .btn-start').disabled=false;
+  document.querySelector('#speakerTab .btn-pause').disabled=true;
+  updateDisplay();
+}
+function resetTimer(){
+  isRunning=false; clearInterval(timerInterval); currentTime=0;
+  document.querySelector('#speakerTab .btn-start').disabled=false;
+  document.querySelector('#speakerTab .btn-pause').disabled=true;
+  updateDisplay();
+}
+function stopTimer(){
+  isRunning=false; clearInterval(timerInterval); currentTime=0; speaker=''; speakerInput.value='';
+  speakerInput.disabled=false; timeLimitInput.disabled=false;
+  document.querySelector('#speakerTab .btn-start').disabled=false;
+  document.querySelector('#speakerTab .btn-pause').disabled=true;
+  updateDisplay();
+}
 
-            // Indicadores para reunión
-            statusIndicator.textContent = isMeetingRunning ? '🟢 REUNIÓN EN CURSO' : 
-                                         meetingTime > 0 ? '⏸️ REUNIÓN PAUSADA' : '⏹️ REUNIÓN DETENIDA';
-            body.className = 'bg-normal';
+// ---------- Reunión ----------
+function updateMeetingDisplay(){
+  if(activeTab!=='meeting') return;
 
-            // Ocultar elementos específicos del cronómetro de orador
-            remainingLabel.style.display = 'none';
-            remainingTimeDisplay.style.display = 'none';
-            
-            timeLimitInfo.textContent = `Total de participaciones: ${participationRecords.length}`;
-            statusInfo.textContent = isMeetingRunning ? '⏱️ Reunión en marcha' : 
-                                    meetingTime > 0 ? '⏸️ Reunión pausada' : '';
-        }
+  meetingTimerEl.textContent=formatTimeWithHours(meetingTime);
+  currentTimeDisplay.textContent=formatTimeWithHours(meetingTime);
+  speakerDisplay.textContent=meetingTitle||'Cronómetro de Reunión';
+  speakerDisplay.style.display='block';
 
-        // Funciones de control ORIGINALES (sin modificar)
-        function startTimer() {
-            // Actualizar configuración
-            timeLimit = parseInt(timeLimitInput.value) || 5;
-            speaker = speakerInput.value;
+  if(currentParticipantName){
+    document.getElementById('currentParticipationInfo').style.display='block';
+    document.getElementById('currentParticipantDisplay').textContent=currentParticipantName;
+    document.getElementById('currentParticipantTimer').textContent=formatTime(currentParticipantTime);
+    document.getElementById('currentParticipantLimit').textContent=formatTime(currentParticipantTimeLimit);
 
-            isRunning = true;
-            timerInterval = setInterval(() => {
-                currentTime++;
-                updateDisplay();
-            }, 1000);
+    const rem=currentParticipantTimeLimit-currentParticipantTime;
+    const remEl=document.getElementById('currentParticipantRemaining');
+    if(rem>=0){remEl.textContent=formatTime(rem); remEl.style.color='#059669';}
+    else{remEl.textContent='+'+formatTime(Math.abs(rem)); remEl.style.color='#dc2626';}
+  } else {
+    document.getElementById('currentParticipationInfo').style.display='none';
+  }
 
-            // Deshabilitar inputs
-            speakerInput.disabled = true;
-            timeLimitInput.disabled = true;
-            
-            // Actualizar botones
-            startBtn.disabled = true;
-            pauseBtn.disabled = false;
+  if(isMeetingRunning){
+    if(currentParticipantName){
+      const rem=currentParticipantTimeLimit-currentParticipantTime;
+      if(rem<0){statusIndicator.textContent=`🔴 ${currentParticipantName.toUpperCase()} - TIEMPO EXCEDIDO`; body.className='bg-overtime';}
+      else if(rem<=60 && rem>0){statusIndicator.textContent=`🟡 ${currentParticipantName.toUpperCase()} - ÚLTIMO MINUTO`; body.className='bg-warning';}
+      else{statusIndicator.textContent=`🟢 ${currentParticipantName.toUpperCase()} HABLANDO`; body.className='bg-normal';}
+    } else {
+      statusIndicator.textContent='🟢 REUNIÓN EN CURSO'; body.className='bg-normal';
+    }
+  } else {
+    statusIndicator.textContent= meetingTime>0 ? '⏸️ REUNIÓN PAUSADA' : '⏹️ REUNIÓN DETENIDA';
+    body.className='bg-normal';
+  }
 
-            updateDisplay();
-        }
+  // info lateral
+  remainingLabel.style.display='none';
+  remainingTimeDisplay.style.display='none';
+  timeLimitInfo.textContent=`Total de participaciones: ${participationRecords.length}`;
 
-        function pauseTimer() {
-            isRunning = false;
-            clearInterval(timerInterval);
-            
-            // Actualizar botones
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
+  if(isMeetingRunning && currentParticipantName){
+    const rem=currentParticipantTimeLimit-currentParticipantTime;
+    statusInfo.textContent = rem<0
+      ? `⚠️ ${currentParticipantName} se ha excedido por ${formatTime(Math.abs(rem))}`
+      : `⏱️ ${currentParticipantName} participando - ${formatTime(rem)} restante`;
+  } else if(isMeetingRunning){
+    statusInfo.textContent='⏱️ Reunión en marcha';
+  } else if(meetingTime>0){
+    statusInfo.textContent='⏸️ Reunión pausada';
+  } else { statusInfo.textContent=''; }
+}
 
-            updateDisplay();
-        }
+function startMeetingTimer(){
+  meetingTitle=meetingTitleInput.value||'Reunión Sin Título';
+  meetingDate=meetingDateInput.value;
+  if(isMeetingRunning) return;
+  isMeetingRunning=true;
+  meetingTimerInterval=setInterval(()=>{
+    meetingTime++;
+    if(currentParticipantName) currentParticipantTime++;
+    updateMeetingDisplay();
+  },1000);
+  document.getElementById('meetingStartBtn').disabled=true;
+  document.getElementById('meetingPauseBtn').disabled=false;
+  updateMeetingDisplay();
+}
+function pauseMeetingTimer(){ // pausa general de la reunión (no afecta al orador activo salvo que se deja de sumar)
+  isMeetingRunning=false;
+  clearInterval(meetingTimerInterval);
+  document.getElementById('meetingStartBtn').disabled=false;
+  // no tocamos meetingPauseBtn para que se pueda terminar/asignar orador aún en pausa
+  updateMeetingDisplay();
+}
 
-        function resetTimer() {
-            isRunning = false;
-            clearInterval(timerInterval);
-            currentTime = 0;
-            
-            // Actualizar botones
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
+function pauseMeetingForParticipant(){
+  if(currentParticipantName){
+    const confirmSave=confirm(`¿Guardar la participación de ${currentParticipantName}? (${formatTime(currentParticipantTime)})`);
+    if(confirmSave) saveCurrentParticipation();
+  }
+  const name=prompt('Nombre del nuevo orador:');
+  if(name){
+    currentParticipantName=name;
+    currentParticipantTime=0;
+    participantStartTime=meetingTime;
 
-            updateDisplay();
-        }
+    // NEW: usar el límite de la pestaña Reunión; si vacío, usar el de Orador; si no, 5
+    const limMin = parseInt(meetingParticipantLimitInput.value) || parseInt(timeLimitInput.value) || 5; // NEW
+    currentParticipantTimeLimit = limMin * 60; // NEW
 
-        function stopTimer() {
-            isRunning = false;
-            clearInterval(timerInterval);
-            currentTime = 0;
-            speaker = '';
-            speakerInput.value = '';
-            
-            // Habilitar inputs
-            speakerInput.disabled = false;
-            timeLimitInput.disabled = false;
-            
-            // Actualizar botones
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
+    document.getElementById('currentParticipantLimit').textContent=formatTime(currentParticipantTimeLimit);
+    document.getElementById('meetingPauseBtn').textContent='⏹️ Terminar Participación';
+    updateMeetingDisplay();
+  }
+}
+function saveCurrentParticipation(){
+  if(currentParticipantName && currentParticipantTime>0){
+    participationRecords.push({
+      id:Date.now(),
+      speaker:currentParticipantName,
+      timeSpoken:currentParticipantTime,
+      timestamp:new Date().toLocaleTimeString(),
+      startTime:participantStartTime,
+      endTime:meetingTime
+    });
+    updateRecordsList();
 
-            updateDisplay();
-        }
+    currentParticipantName='';
+    currentParticipantTime=0;
+    currentParticipantTimeLimit=0;
+    participantStartTime=0;
 
-        // NUEVAS funciones para cronómetro de reunión
-        function startMeetingTimer() {
-            meetingTitle = meetingTitleInput.value || 'Reunión Sin Título';
-            meetingDate = meetingDateInput.value;
-            
-            isMeetingRunning = true;
-            meetingTimerInterval = setInterval(() => {
-                meetingTime++;
-                updateMeetingDisplay();
-            }, 1000);
+    document.getElementById('meetingPauseBtn').textContent='⏸️ Pausar y Asignar Orador';
+    updateMeetingDisplay();
+  }
+}
+function finishCurrentParticipation(){ saveCurrentParticipation(); }
 
-            // Actualizar botones
-            document.getElementById('meetingStartBtn').disabled = true;
-            document.getElementById('meetingPauseBtn').disabled = false;
+function stopMeetingTimer(){
+  if(currentParticipantName && currentParticipantTime>0){
+    const confirmSave=confirm(`¿Guardar la participación actual de ${currentParticipantName}? (${formatTime(currentParticipantTime)})`);
+    if(confirmSave) saveCurrentParticipation();
+  }
+  isMeetingRunning=false; clearInterval(meetingTimerInterval);
+  currentParticipantName=''; currentParticipantTime=0; currentParticipantTimeLimit=0; participantStartTime=0;
+  document.getElementById('meetingStartBtn').disabled=false;
+  const pauseBtnMeet=document.getElementById('meetingPauseBtn');
+  pauseBtnMeet.disabled=true; pauseBtnMeet.textContent='⏸️ Pausar y Asignar Orador';
+  updateMeetingDisplay();
+}
 
-            updateMeetingDisplay();
-        }
+function updateRecordsList(){
+  recordCount.textContent=participationRecords.length;
+  if(participationRecords.length===0){
+    recordsList.innerHTML='<div style="padding:2rem;text-align:center;color:#6b7280;">No hay registros aún</div>';
+    return;
+  }
+  recordsList.innerHTML = participationRecords.map(r=>`
+    <div class="record-item">
+      <div class="record-info">
+        <div class="record-name">${r.speaker}</div>
+        <div class="record-time">${formatTime(r.timeSpoken)} - ${r.timestamp}</div>
+      </div>
+      <div class="record-actions">
+        <button class="btn btn-delete btn-small" onclick="deleteRecord(${r.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+function deleteRecord(id){
+  participationRecords=participationRecords.filter(r=>r.id!==id);
+  updateRecordsList();
+}
 
-        function pauseMeetingTimer() {
-            isMeetingRunning = false;
-            clearInterval(meetingTimerInterval);
-            
-            // Actualizar botones
-            document.getElementById('meetingStartBtn').disabled = false;
-            document.getElementById('meetingPauseBtn').disabled = true;
+function exportToPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc=new jsPDF();
+  doc.setFontSize(20); doc.text('REPORTE DE REUNIÓN',20,30);
+  doc.setFontSize(12);
+  doc.text(`Título: ${meetingTitle}`,20,50);
+  doc.text(`Fecha: ${meetingDate}`,20,60);
+  doc.text(`Duración Total: ${formatTimeWithHours(meetingTime)}`,20,70);
+  doc.text(`Número de Participaciones: ${participationRecords.length}`,20,80);
+  doc.line(20,90,190,90);
+  doc.setFontSize(14); doc.text('REGISTRO DE PARTICIPACIONES',20,105);
 
-            updateMeetingDisplay();
-        }
+  let y=120; doc.setFontSize(10);
+  if(participationRecords.length>0){
+    doc.text('Participante',20,y); doc.text('Tiempo',100,y); doc.text('Hora',150,y); y+=10;
+    doc.line(20,y-3,190,y-3);
+    participationRecords.forEach(r=>{
+      if(y>280){doc.addPage(); y=30;}
+      doc.text(r.speaker,20,y);
+      doc.text(formatTime(r.timeSpoken),100,y);
+      doc.text(r.timestamp,150,y);
+      y+=8;
+    });
+    y+=10; doc.line(20,y,190,y); y+=10;
+    const total=participationRecords.reduce((s,r)=>s+r.timeSpoken,0);
+    const avg= total/participationRecords.length;
+    doc.setFontSize(12); doc.text('RESUMEN ESTADÍSTICO',20,y); y+=15;
+    doc.setFontSize(10);
+    doc.text(`Tiempo total de participaciones: ${formatTimeWithHours(total)}`,20,y); y+=8;
+    doc.text(`Tiempo promedio por participación: ${formatTime(Math.round(avg))}`,20,y); y+=8;
+    doc.text(`Participación más larga: ${formatTime(Math.max(...participationRecords.map(r=>r.timeSpoken)))}`,20,y); y+=8;
+    doc.text(`Participación más corta: ${formatTime(Math.min(...participationRecords.map(r=>r.timeSpoken)))}`,20,y);
+  } else {
+    doc.text('No hay participaciones registradas',20,y);
+  }
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i); doc.setFontSize(8);
+    doc.text(`Generado el ${new Date().toLocaleString()} - Página ${i} de ${pages}`,20,290);
+  }
+  const fileName=`reunion_${meetingDate}_${(meetingTitle||'sin_titulo').replace(/[^a-z0-9]/gi,'_').toLowerCase()}.pdf`;
+  doc.save(fileName);
+}
 
-        function stopMeetingTimer() {
-            isMeetingRunning = false;
-            clearInterval(meetingTimerInterval);
-            
-            // Actualizar botones
-            document.getElementById('meetingStartBtn').disabled = false;
-            document.getElementById('meetingPauseBtn').disabled = true;
+function toggleControls(){
+  showControls=!showControls;
+  if(showControls){
+    controlsPanel.classList.remove('hidden'); mainDisplay.classList.remove('full-screen');
+    toggleBtn.textContent='🔼 Ocultar Controles';
+    document.querySelector('.speaker-name').className='speaker-name normal';
+    document.querySelector('.time-label').className='time-label normal';
+    document.querySelector('.time-display').className='time-display normal';
+    document.querySelector('.status-indicator').className='status-indicator normal';
+    document.querySelector('.info-label').className='info-label normal';
+    document.querySelector('.info-time').className='info-time normal';
+    document.querySelector('.info-details').className='info-details';
+  } else {
+    controlsPanel.classList.add('hidden'); mainDisplay.classList.add('full-screen');
+    toggleBtn.textContent='🔽 Mostrar Controles';
+    document.querySelector('.speaker-name').className='speaker-name large';
+    document.querySelector('.time-label').className='time-label large';
+    document.querySelector('.time-display').className='time-display large';
+    document.querySelector('.status-indicator').className='status-indicator large';
+    document.querySelector('.info-label').className='info-label large';
+    document.querySelector('.info-time').className='info-time large';
+    document.querySelector('.info-details').className='info-details large';
+  }
+}
 
-            updateMeetingDisplay();
-        }
+// ---------- SHORTCUTS: espacio / enter en pestaña Reunión ----------
+window.addEventListener('keydown', (e)=>{
+  // evitar interferir cuando escribes en inputs/textarea/select
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  const typing = ['INPUT','TEXTAREA','SELECT'].includes(tag);
+  if(activeTab!=='meeting' || typing) return;
 
-        function saveParticipation() {
-            const speakerName = prompt('Nombre del participante:');
-            const timeSpoken = prompt('Tiempo de participación (en minutos):');
-            
-            if (speakerName && timeSpoken) {
-                const record = {
-                    id: Date.now(),
-                    speaker: speakerName,
-                    timeSpoken: parseInt(timeSpoken) * 60, // convertir a segundos
-                    timestamp: new Date().toLocaleTimeString()
-                };
-                participationRecords.push(record);
-                updateRecordsList();
-            }
-        }
+  if(e.code==='Space'){ // Iniciar/Pausar reunión
+    e.preventDefault();
+    if(isMeetingRunning) pauseMeetingTimer(); else startMeetingTimer();
+  } else if(e.code==='Enter'){ // Asignar/Terminar participación
+    e.preventDefault();
+    if(currentParticipantName) finishCurrentParticipation();
+    else pauseMeetingForParticipant();
+  }
+});
 
-        function updateRecordsList() {
-            recordCount.textContent = participationRecords.length;
-            
-            if (participationRecords.length === 0) {
-                recordsList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #6b7280;">No hay registros aún</div>';
-                return;
-            }
-
-            const html = participationRecords.map(record => `
-                <div class="record-item">
-                    <div class="record-info">
-                        <div class="record-name">${record.speaker}</div>
-                        <div class="record-time">${formatTime(record.timeSpoken)} - ${record.timestamp}</div>
-                    </div>
-                    <div class="record-actions">
-                        <button class="btn btn-delete btn-small" onclick="deleteRecord(${record.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-            
-            recordsList.innerHTML = html;
-        }
-
-        function deleteRecord(id) {
-            participationRecords = participationRecords.filter(record => record.id !== id);
-            updateRecordsList();
-        }
-
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Título
-            doc.setFontSize(20);
-            doc.text('REPORTE DE REUNIÓN', 20, 30);
-            
-            // Información de la reunión
-            doc.setFontSize(12);
-            doc.text(`Título: ${meetingTitle}`, 20, 50);
-            doc.text(`Fecha: ${meetingDate}`, 20, 60);
-            doc.text(`Duración Total: ${formatTimeWithHours(meetingTime)}`, 20, 70);
-            doc.text(`Número de Participaciones: ${participationRecords.length}`, 20, 80);
-            
-            // Línea separadora
-            doc.line(20, 90, 190, 90);
-            
-            // Tabla de participaciones
-            doc.setFontSize(14);
-            doc.text('REGISTRO DE PARTICIPACIONES', 20, 105);
-            
-            let y = 120;
-            doc.setFontSize(10);
-            
-            if (participationRecords.length > 0) {
-                // Encabezados
-                doc.text('Participante', 20, y);
-                doc.text('Tiempo', 100, y);
-                doc.text('Hora', 150, y);
-                y += 10;
-                
-                // Línea bajo encabezados
-                doc.line(20, y - 3, 190, y - 3);
-                
-                // Datos
-                participationRecords.forEach(record => {
-                    if (y > 280) { // Nueva página si es necesario
-                        doc.addPage();
-                        y = 30;
-                    }
-                    
-                    doc.text(record.speaker, 20, y);
-                    doc.text(formatTime(record.timeSpoken), 100, y);
-                    doc.text(record.timestamp, 150, y);
-                    y += 8;
-                });
-                
-                // Resumen
-                y += 10;
-                doc.line(20, y, 190, y);
-                y += 10;
-                
-                const totalSpeakingTime = participationRecords.reduce((sum, record) => sum + record.timeSpoken, 0);
-                const averageTime = totalSpeakingTime / participationRecords.length;
-                
-                doc.setFontSize(12);
-                doc.text('RESUMEN ESTADÍSTICO', 20, y);
-                y += 15;
-                
-                doc.setFontSize(10);
-                doc.text(`Tiempo total de participaciones: ${formatTimeWithHours(totalSpeakingTime)}`, 20, y);
-                y += 8;
-                doc.text(`Tiempo promedio por participación: ${formatTime(Math.round(averageTime))}`, 20, y);
-                y += 8;
-                doc.text(`Participación más larga: ${formatTime(Math.max(...participationRecords.map(r => r.timeSpoken)))}`, 20, y);
-                y += 8;
-                doc.text(`Participación más corta: ${formatTime(Math.min(...participationRecords.map(r => r.timeSpoken)))}`, 20, y);
-            } else {
-                doc.text('No hay participaciones registradas', 20, y);
-            }
-            
-            // Pie de página
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.text(`Generado el ${new Date().toLocaleString()} - Página ${i} de ${pageCount}`, 20, 290);
-            }
-            
-            // Guardar PDF
-            const fileName = `reunion_${meetingDate}_${meetingTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
-            doc.save(fileName);
-        }
-
-        function toggleControls() {
-            showControls = !showControls;
-            
-            if (showControls) {
-                controlsPanel.classList.remove('hidden');
-                mainDisplay.classList.remove('full-screen');
-                toggleBtn.textContent = '🔼 Ocultar Controles';
-                
-                // Tamaños normales
-                document.querySelector('.speaker-name').className = 'speaker-name normal';
-                document.querySelector('.time-label').className = 'time-label normal';
-                document.querySelector('.time-display').className = 'time-display normal';
-                document.querySelector('.status-indicator').className = 'status-indicator normal';
-                document.querySelector('.info-label').className = 'info-label normal';
-                document.querySelector('.info-time').className = 'info-time normal';
-                document.querySelector('.info-details').className = 'info-details';
-            } else {
-                controlsPanel.classList.add('hidden');
-                mainDisplay.classList.add('full-screen');
-                toggleBtn.textContent = '🔽 Mostrar Controles';
-                
-                // Tamaños grandes
-                document.querySelector('.speaker-name').className = 'speaker-name large';
-                document.querySelector('.time-label').className = 'time-label large';
-                document.querySelector('.time-display').className = 'time-display large';
-                document.querySelector('.status-indicator').className = 'status-indicator large';
-                document.querySelector('.info-label').className = 'info-label large';
-                document.querySelector('.info-time').className = 'info-time large';
-                document.querySelector('.info-details').className = 'info-details large';
-            }
-        }
-
-        // Inicializar ORIGINAL
-        updateDisplay();
-        updateRecordsList();
-    </script>
+// Inicializar
+updateDisplay();
+updateRecordsList();
+</script>
 </body>
 </html>
