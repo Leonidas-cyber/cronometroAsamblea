@@ -516,21 +516,24 @@
                         ▶️ Iniciar Reunión
                     </button>
                     
-                    <button class="btn btn-pause" onclick="pauseMeetingTimer()" disabled id="meetingPauseBtn">
-                        ⏸️ Pausar
+                    <button class="btn btn-pause" onclick="pauseMeetingForParticipant()" disabled id="meetingPauseBtn">
+                        ⏸️ Pausar y Asignar Orador
                     </button>
                     
                     <button class="btn btn-stop" onclick="stopMeetingTimer()" id="meetingStopBtn">
                         ⏹️ Terminar Reunión
                     </button>
                     
-                    <button class="btn btn-save" onclick="saveParticipation()" id="saveParticipationBtn">
-                        💾 Guardar Participación
-                    </button>
-                    
                     <button class="btn btn-export" onclick="exportToPDF()" id="exportBtn">
                         📄 Exportar PDF
                     </button>
+                </div>
+
+                <!-- Participación actual -->
+                <div class="meeting-info" id="currentParticipationInfo" style="display: none;">
+                    <div class="form-label">Participación Actual:</div>
+                    <div style="font-weight: bold; color: #374151; margin-bottom: 0.5rem;" id="currentParticipantDisplay"></div>
+                    <div class="meeting-timer" id="currentParticipantTimer">00:00</div>
                 </div>
 
                 <!-- Sección de registros -->
@@ -590,6 +593,11 @@
         let meetingDate = '';
         let participationRecords = [];
         let activeTab = 'speaker';
+        
+        // Variables para participación actual
+        let currentParticipantTime = 0; // tiempo del participante actual
+        let currentParticipantName = '';
+        let participantStartTime = 0; // tiempo de inicio de la participación
 
         // Elementos del DOM ORIGINALES
         const body = document.body;
