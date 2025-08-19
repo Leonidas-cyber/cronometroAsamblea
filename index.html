@@ -65,6 +65,7 @@
             margin-bottom: 2rem;
         }
 
+        /* Nuevos estilos para tabs */
         .tabs {
             display: flex;
             margin-bottom: 2rem;
@@ -193,6 +194,7 @@
             background-color: #b91c1c;
         }
 
+        /* Nuevos estilos para cronómetro de reunión */
         .btn-save {
             background-color: #7c3aed;
         }
@@ -450,11 +452,11 @@
             
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('speaker')">Cronómetro Individual</button>
+                <button class="tab active" onclick="switchTab('speaker')">Cronómetro de Orador</button>
                 <button class="tab" onclick="switchTab('meeting')">Cronómetro de Reunión</button>
             </div>
 
-            <!-- Tab: Cronómetro Individual -->
+            <!-- Tab: Cronómetro de Orador (Original) -->
             <div class="tab-content active" id="speakerTab">
                 <div class="form-grid">
                     <div class="form-group">
@@ -471,25 +473,25 @@
                 </div>
 
                 <div class="controls-buttons">
-                    <button class="btn btn-start" onclick="startSpeakerTimer()">
+                    <button class="btn btn-start" onclick="startTimer()">
                         ▶️ Iniciar
                     </button>
                     
-                    <button class="btn btn-pause" onclick="pauseSpeakerTimer()" disabled>
+                    <button class="btn btn-pause" onclick="pauseTimer()" disabled>
                         ⏸️ Pausar
                     </button>
                     
-                    <button class="btn btn-reset" onclick="resetSpeakerTimer()">
+                    <button class="btn btn-reset" onclick="resetTimer()">
                         🔄 Reiniciar
                     </button>
                     
-                    <button class="btn btn-stop btn-save" onclick="stopAndSaveSpeaker()">
-                        💾 Detener y Guardar
+                    <button class="btn btn-stop" onclick="stopTimer()">
+                        ⏹️ Detener
                     </button>
                 </div>
             </div>
 
-            <!-- Tab: Cronómetro de Reunión -->
+            <!-- Tab: Cronómetro de Reunión (Nuevo) -->
             <div class="tab-content" id="meetingTab">
                 <div class="form-grid">
                     <div class="form-group">
@@ -522,6 +524,10 @@
                         ⏹️ Terminar Reunión
                     </button>
                     
+                    <button class="btn btn-save" onclick="saveParticipation()" id="saveParticipationBtn">
+                        💾 Guardar Participación
+                    </button>
+                    
                     <button class="btn btn-export" onclick="exportToPDF()" id="exportBtn">
                         📄 Exportar PDF
                     </button>
@@ -545,7 +551,7 @@
             
             <!-- TIEMPO TRANSCURRIDO - PRINCIPAL -->
             <div class="time-section">
-                <div class="time-label normal" id="mainTimeLabel">TIEMPO TRANSCURRIDO</div>
+                <div class="time-label normal">TIEMPO TRANSCURRIDO</div>
                 <div class="time-display normal" id="currentTimeDisplay">00:00</div>
             </div>
 
@@ -568,33 +574,29 @@
     </div>
 
     <script>
-        // Variables globales para cronómetro individual
+        // Variables globales ORIGINALES (sin modificar)
         let timeLimit = 5; // minutos
         let currentTime = 0; // segundos
-        let isSpeakerRunning = false;
+        let isRunning = false;
         let speaker = '';
-        let speakerTimerInterval = null;
+        let showControls = true;
+        let timerInterval = null;
 
-        // Variables globales para cronómetro de reunión
+        // NUEVAS variables para cronómetro de reunión
         let meetingTime = 0; // segundos
         let isMeetingRunning = false;
         let meetingTimerInterval = null;
         let meetingTitle = '';
         let meetingDate = '';
         let participationRecords = [];
-
-        // Variables de interfaz
-        let showControls = true;
         let activeTab = 'speaker';
 
-        // Elementos del DOM
+        // Elementos del DOM ORIGINALES
         const body = document.body;
         const controlsPanel = document.getElementById('controlsPanel');
         const mainDisplay = document.getElementById('mainDisplay');
         const speakerInput = document.getElementById('speakerInput');
         const timeLimitInput = document.getElementById('timeLimitInput');
-        const meetingTitleInput = document.getElementById('meetingTitleInput');
-        const meetingDateInput = document.getElementById('meetingDateInput');
         const speakerDisplay = document.getElementById('speakerDisplay');
         const currentTimeDisplay = document.getElementById('currentTimeDisplay');
         const statusIndicator = document.getElementById('statusIndicator');
@@ -602,31 +604,27 @@
         const remainingTimeDisplay = document.getElementById('remainingTimeDisplay');
         const timeLimitInfo = document.getElementById('timeLimitInfo');
         const statusInfo = document.getElementById('statusInfo');
+
+        // Botones ORIGINALES
+        const startBtn = document.querySelector('.btn-start');
+        const pauseBtn = document.querySelector('.btn-pause');
+        const resetBtn = document.querySelector('.btn-reset');
+        const stopBtn = document.querySelector('.btn-stop');
+        const toggleBtn = document.querySelector('.toggle-btn');
+
+        // NUEVOS elementos del DOM para reunión
+        const meetingTitleInput = document.getElementById('meetingTitleInput');
+        const meetingDateInput = document.getElementById('meetingDateInput');
         const meetingTimer = document.getElementById('meetingTimer');
         const recordsList = document.getElementById('recordsList');
         const recordCount = document.getElementById('recordCount');
-        const mainTimeLabel = document.getElementById('mainTimeLabel');
 
         // Inicializar fecha actual
-        meetingDateInput.valueAsDate = new Date();
-
-        // Funciones de formato de tiempo
-        function formatTime(seconds) {
-            const absSeconds = Math.abs(seconds);
-            const mins = Math.floor(absSeconds / 60);
-            const secs = absSeconds % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        if (meetingDateInput) {
+            meetingDateInput.valueAsDate = new Date();
         }
 
-        function formatTimeWithHours(seconds) {
-            const absSeconds = Math.abs(seconds);
-            const hours = Math.floor(absSeconds / 3600);
-            const mins = Math.floor((absSeconds % 3600) / 60);
-            const secs = absSeconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        // Función para cambiar tabs
+        // NUEVA función para cambiar tabs
         function switchTab(tab) {
             activeTab = tab;
             
@@ -637,16 +635,35 @@
             if (tab === 'speaker') {
                 document.querySelector('.tab:first-child').classList.add('active');
                 document.getElementById('speakerTab').classList.add('active');
-                updateSpeakerDisplay();
+                // Restaurar display original
+                updateDisplay();
             } else {
                 document.querySelector('.tab:last-child').classList.add('active');
                 document.getElementById('meetingTab').classList.add('active');
+                // Mostrar display de reunión
                 updateMeetingDisplay();
             }
         }
 
-        // Funciones para cronómetro individual
-        function updateSpeakerDisplay() {
+        // Funciones de formato de tiempo ORIGINALES
+        function formatTime(seconds) {
+            const absSeconds = Math.abs(seconds);
+            const mins = Math.floor(absSeconds / 60);
+            const secs = absSeconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // NUEVA función para formato con horas
+        function formatTimeWithHours(seconds) {
+            const absSeconds = Math.abs(seconds);
+            const hours = Math.floor(absSeconds / 3600);
+            const mins = Math.floor((absSeconds % 3600) / 60);
+            const secs = absSeconds % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Función para actualizar la pantalla ORIGINAL (sin modificar)
+        function updateDisplay() {
             if (activeTab !== 'speaker') return;
             
             const timeLimitInSeconds = timeLimit * 60;
@@ -656,7 +673,6 @@
 
             // Actualizar tiempo actual
             currentTimeDisplay.textContent = formatTime(currentTime);
-            mainTimeLabel.textContent = 'TIEMPO TRANSCURRIDO';
 
             // Actualizar tiempo restante
             remainingTimeDisplay.textContent = (isOverTime ? '+' : '') + formatTime(remainingTime);
@@ -679,7 +695,7 @@
             // Actualizar información adicional
             timeLimitInfo.textContent = `Límite de tiempo: ${timeLimit} minutos`;
             
-            if (isSpeakerRunning) {
+            if (isRunning) {
                 statusInfo.textContent = '⏱️ Cronómetro en marcha';
             } else if (currentTime > 0) {
                 statusInfo.textContent = '⏸️ Cronómetro pausado';
@@ -691,20 +707,47 @@
             speakerDisplay.textContent = speaker;
             speakerDisplay.style.display = speaker ? 'block' : 'none';
 
-            // Mostrar elementos de cronómetro individual
-            document.getElementById('remainingLabel').style.display = 'block';
-            document.getElementById('remainingTimeDisplay').style.display = 'block';
+            // Mostrar elementos originales
+            remainingLabel.style.display = 'block';
+            remainingTimeDisplay.style.display = 'block';
         }
 
-        function startSpeakerTimer() {
+        // NUEVA función para actualizar display de reunión
+        function updateMeetingDisplay() {
+            if (activeTab !== 'meeting') return;
+            
+            // Actualizar tiempo de reunión en el panel
+            meetingTimer.textContent = formatTimeWithHours(meetingTime);
+
+            // Actualizar display principal para reunión
+            currentTimeDisplay.textContent = formatTimeWithHours(meetingTime);
+            speakerDisplay.textContent = meetingTitle || 'Cronómetro de Reunión';
+            speakerDisplay.style.display = 'block';
+
+            // Indicadores para reunión
+            statusIndicator.textContent = isMeetingRunning ? '🟢 REUNIÓN EN CURSO' : 
+                                         meetingTime > 0 ? '⏸️ REUNIÓN PAUSADA' : '⏹️ REUNIÓN DETENIDA';
+            body.className = 'bg-normal';
+
+            // Ocultar elementos específicos del cronómetro de orador
+            remainingLabel.style.display = 'none';
+            remainingTimeDisplay.style.display = 'none';
+            
+            timeLimitInfo.textContent = `Total de participaciones: ${participationRecords.length}`;
+            statusInfo.textContent = isMeetingRunning ? '⏱️ Reunión en marcha' : 
+                                    meetingTime > 0 ? '⏸️ Reunión pausada' : '';
+        }
+
+        // Funciones de control ORIGINALES (sin modificar)
+        function startTimer() {
             // Actualizar configuración
             timeLimit = parseInt(timeLimitInput.value) || 5;
             speaker = speakerInput.value;
 
-            isSpeakerRunning = true;
-            speakerTimerInterval = setInterval(() => {
+            isRunning = true;
+            timerInterval = setInterval(() => {
                 currentTime++;
-                updateSpeakerDisplay();
+                updateDisplay();
             }, 1000);
 
             // Deshabilitar inputs
@@ -712,52 +755,38 @@
             timeLimitInput.disabled = true;
             
             // Actualizar botones
-            document.querySelector('.btn-start').disabled = true;
-            document.querySelector('.btn-pause').disabled = false;
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
 
-            updateSpeakerDisplay();
+            updateDisplay();
         }
 
-        function pauseSpeakerTimer() {
-            isSpeakerRunning = false;
-            clearInterval(speakerTimerInterval);
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
             
             // Actualizar botones
-            document.querySelector('.btn-start').disabled = false;
-            document.querySelector('.btn-pause').disabled = true;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
 
-            updateSpeakerDisplay();
+            updateDisplay();
         }
 
-        function resetSpeakerTimer() {
-            isSpeakerRunning = false;
-            clearInterval(speakerTimerInterval);
+        function resetTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
             currentTime = 0;
             
             // Actualizar botones
-            document.querySelector('.btn-start').disabled = false;
-            document.querySelector('.btn-pause').disabled = true;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
 
-            updateSpeakerDisplay();
+            updateDisplay();
         }
 
-        function stopAndSaveSpeaker() {
-            if (currentTime > 0 && speaker) {
-                // Guardar registro
-                const record = {
-                    id: Date.now(),
-                    speaker: speaker,
-                    timeSpoken: currentTime,
-                    timeLimit: timeLimit,
-                    timestamp: new Date().toLocaleTimeString()
-                };
-                participationRecords.push(record);
-                updateRecordsList();
-            }
-
-            // Detener cronómetro
-            isSpeakerRunning = false;
-            clearInterval(speakerTimerInterval);
+        function stopTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
             currentTime = 0;
             speaker = '';
             speakerInput.value = '';
@@ -767,38 +796,13 @@
             timeLimitInput.disabled = false;
             
             // Actualizar botones
-            document.querySelector('.btn-start').disabled = false;
-            document.querySelector('.btn-pause').disabled = true;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
 
-            updateSpeakerDisplay();
+            updateDisplay();
         }
 
-        // Funciones para cronómetro de reunión
-        function updateMeetingDisplay() {
-            if (activeTab !== 'meeting') return;
-            
-            // Actualizar tiempo de reunión
-            meetingTimer.textContent = formatTimeWithHours(meetingTime);
-
-            // Actualizar display principal
-            currentTimeDisplay.textContent = formatTimeWithHours(meetingTime);
-            mainTimeLabel.textContent = 'TIEMPO DE REUNIÓN';
-            
-            speakerDisplay.textContent = meetingTitle || 'Cronómetro de Reunión';
-            speakerDisplay.style.display = 'block';
-
-            // Indicadores para reunión
-            statusIndicator.textContent = isMeetingRunning ? '🟢 REUNIÓN EN CURSO' : '⏸️ REUNIÓN PAUSADA';
-            body.className = 'bg-normal';
-
-            // Ocultar elementos específicos del cronómetro individual
-            document.getElementById('remainingLabel').style.display = 'none';
-            document.getElementById('remainingTimeDisplay').style.display = 'none';
-            
-            timeLimitInfo.textContent = `Total de participaciones: ${participationRecords.length}`;
-            statusInfo.textContent = isMeetingRunning ? '⏱️ Reunión en marcha' : '';
-        }
-
+        // NUEVAS funciones para cronómetro de reunión
         function startMeetingTimer() {
             meetingTitle = meetingTitleInput.value || 'Reunión Sin Título';
             meetingDate = meetingDateInput.value;
@@ -838,7 +842,22 @@
             updateMeetingDisplay();
         }
 
-        // Funciones para manejo de registros
+        function saveParticipation() {
+            const speakerName = prompt('Nombre del participante:');
+            const timeSpoken = prompt('Tiempo de participación (en minutos):');
+            
+            if (speakerName && timeSpoken) {
+                const record = {
+                    id: Date.now(),
+                    speaker: speakerName,
+                    timeSpoken: parseInt(timeSpoken) * 60, // convertir a segundos
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                participationRecords.push(record);
+                updateRecordsList();
+            }
+        }
+
         function updateRecordsList() {
             recordCount.textContent = participationRecords.length;
             
@@ -851,7 +870,7 @@
                 <div class="record-item">
                     <div class="record-info">
                         <div class="record-name">${record.speaker}</div>
-                        <div class="record-time">${formatTime(record.timeSpoken)} (Límite: ${record.timeLimit}min) - ${record.timestamp}</div>
+                        <div class="record-time">${formatTime(record.timeSpoken)} - ${record.timestamp}</div>
                     </div>
                     <div class="record-actions">
                         <button class="btn btn-delete btn-small" onclick="deleteRecord(${record.id})">🗑️</button>
@@ -867,7 +886,6 @@
             updateRecordsList();
         }
 
-        // Función para exportar a PDF
         function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -895,10 +913,9 @@
             
             if (participationRecords.length > 0) {
                 // Encabezados
-                doc.text('Orador', 20, y);
-                doc.text('Tiempo Usado', 80, y);
-                doc.text('Límite', 130, y);
-                doc.text('Hora', 160, y);
+                doc.text('Participante', 20, y);
+                doc.text('Tiempo', 100, y);
+                doc.text('Hora', 150, y);
                 y += 10;
                 
                 // Línea bajo encabezados
@@ -912,9 +929,8 @@
                     }
                     
                     doc.text(record.speaker, 20, y);
-                    doc.text(formatTime(record.timeSpoken), 80, y);
-                    doc.text(`${record.timeLimit}min`, 130, y);
-                    doc.text(record.timestamp, 160, y);
+                    doc.text(formatTime(record.timeSpoken), 100, y);
+                    doc.text(record.timestamp, 150, y);
                     y += 8;
                 });
                 
@@ -961,7 +977,7 @@
             if (showControls) {
                 controlsPanel.classList.remove('hidden');
                 mainDisplay.classList.remove('full-screen');
-                document.querySelector('.toggle-btn').textContent = '🔼 Ocultar Controles';
+                toggleBtn.textContent = '🔼 Ocultar Controles';
                 
                 // Tamaños normales
                 document.querySelector('.speaker-name').className = 'speaker-name normal';
@@ -974,7 +990,7 @@
             } else {
                 controlsPanel.classList.add('hidden');
                 mainDisplay.classList.add('full-screen');
-                document.querySelector('.toggle-btn').textContent = '🔽 Mostrar Controles';
+                toggleBtn.textContent = '🔽 Mostrar Controles';
                 
                 // Tamaños grandes
                 document.querySelector('.speaker-name').className = 'speaker-name large';
@@ -987,8 +1003,8 @@
             }
         }
 
-        // Inicializar
-        updateSpeakerDisplay();
+        // Inicializar ORIGINAL
+        updateDisplay();
         updateRecordsList();
     </script>
 </body>
