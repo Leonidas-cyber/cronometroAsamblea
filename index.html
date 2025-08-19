@@ -920,4 +920,76 @@
                 
                 // Resumen
                 y += 10;
-                doc.line(20, y, 190,
+                doc.line(20, y, 190, y);
+                y += 10;
+                
+                const totalSpeakingTime = participationRecords.reduce((sum, record) => sum + record.timeSpoken, 0);
+                const averageTime = totalSpeakingTime / participationRecords.length;
+                
+                doc.setFontSize(12);
+                doc.text('RESUMEN ESTADÍSTICO', 20, y);
+                y += 15;
+                
+                doc.setFontSize(10);
+                doc.text(`Tiempo total de participaciones: ${formatTimeWithHours(totalSpeakingTime)}`, 20, y);
+                y += 8;
+                doc.text(`Tiempo promedio por participación: ${formatTime(Math.round(averageTime))}`, 20, y);
+                y += 8;
+                doc.text(`Participación más larga: ${formatTime(Math.max(...participationRecords.map(r => r.timeSpoken)))}`, 20, y);
+                y += 8;
+                doc.text(`Participación más corta: ${formatTime(Math.min(...participationRecords.map(r => r.timeSpoken)))}`, 20, y);
+            } else {
+                doc.text('No hay participaciones registradas', 20, y);
+            }
+            
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(`Generado el ${new Date().toLocaleString()} - Página ${i} de ${pageCount}`, 20, 290);
+            }
+            
+            // Guardar PDF
+            const fileName = `reunion_${meetingDate}_${meetingTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+            doc.save(fileName);
+        }
+
+        function toggleControls() {
+            showControls = !showControls;
+            
+            if (showControls) {
+                controlsPanel.classList.remove('hidden');
+                mainDisplay.classList.remove('full-screen');
+                document.querySelector('.toggle-btn').textContent = '🔼 Ocultar Controles';
+                
+                // Tamaños normales
+                document.querySelector('.speaker-name').className = 'speaker-name normal';
+                document.querySelector('.time-label').className = 'time-label normal';
+                document.querySelector('.time-display').className = 'time-display normal';
+                document.querySelector('.status-indicator').className = 'status-indicator normal';
+                document.querySelector('.info-label').className = 'info-label normal';
+                document.querySelector('.info-time').className = 'info-time normal';
+                document.querySelector('.info-details').className = 'info-details';
+            } else {
+                controlsPanel.classList.add('hidden');
+                mainDisplay.classList.add('full-screen');
+                document.querySelector('.toggle-btn').textContent = '🔽 Mostrar Controles';
+                
+                // Tamaños grandes
+                document.querySelector('.speaker-name').className = 'speaker-name large';
+                document.querySelector('.time-label').className = 'time-label large';
+                document.querySelector('.time-display').className = 'time-display large';
+                document.querySelector('.status-indicator').className = 'status-indicator large';
+                document.querySelector('.info-label').className = 'info-label large';
+                document.querySelector('.info-time').className = 'info-time large';
+                document.querySelector('.info-details').className = 'info-details large';
+            }
+        }
+
+        // Inicializar
+        updateSpeakerDisplay();
+        updateRecordsList();
+    </script>
+</body>
+</html>
